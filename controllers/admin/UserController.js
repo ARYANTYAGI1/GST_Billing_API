@@ -40,38 +40,40 @@ module.exports = {
             console.error('Error creating or updating Super Admin:', err);
         }
     },
-    signup: async (req, res) => {
-        let { email, password, fullName } = req.body;
+    addUser: async function (req, res) {
+        let { email, password, fullName, address, userType } = req.body;
         let emailExists, user, token, link;
-        email = email.trim();     
+        email = email.trim();
         try {
+            if (![1, 2, 3].includes(userType)) {
+                return res.status(400).send({ success: false, message: "Invalid user type.", data: null });
+            }
             emailExists = await User.findOne({ email });
-            if (emailExists) return res.status(400).send({ success: false, message:"Email Already Exist", data: null }); 
+            if (emailExists) {
+                return res.status(400).send({ success: false, message: "Email Already Exists", data: null });
+            }
             password = await CommonHelper.bcryptPassword(password);
             req.body.password = password;
             user = new User(req.body);
             token = AuthHelper.generateToken(user);
             user.emailVerifyToken = token;
-            link = `${process.env.API_URL}/account/verify?id=${user._id}&email=${user.email}&token=${token}`;
-            console.log('link',link)
+            link = `${process.env.API_URL}/account/verify?${user._id}&${user.email}&${token}`;
             await user.save();
-            await MailHelper.sendEmail(
-                { email: user.email, name: user.fullName },
-                { subject: 'Email Verification' },
-                'emailVerification' // This should match the template name
-            );
-            res.status(200).send({
-                success: true,
-                message: 'User created and verification email sent successfully',
-                data: { _id: user._id }
-            });
+            const context = {
+                name: fullName,
+                link: link,
+            };
+            await MailHelper.sendEmail(email, fullName, 'Email Verification', 'emailVerification', context);
+            res.status(200).send({ success: true, message: 'User created and verification email sent successfully', data: { _id: user._id }});
         } catch (err) {
-            console.log(err)
+            console.error(err);
             return res.status(500).send({ success: false, message: 'Something went wrong', data: err });
         }
     },
-    verifyEmail: async function (req, res) {
+    verifyEmail: async function (req, res) {  
         try {
+            console.log('code is here');
+            
             const user = await User.findOne({
                 $and: [
                     { _id: req.params.id },

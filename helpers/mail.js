@@ -1,53 +1,40 @@
-const nodemailer = require('nodemailer');
+const mailjet = require('node-mailjet');
+const mailjetClient = mailjet.apiConnect(
+    process.env.MAILJET_API_KEY,
+    process.env.MAILJET_SECRET_KEY
+);
 const path = require('path');
-
-// Email sending function
-const sendEmail = async (to, options, template) => {
-    // Dynamically import the nodemailer-express-handlebars module
-    const nodemailerHbs = (await import('nodemailer-express-handlebars')).default;
-
-    const optionsData = {
-        viewEngine: {
-            extname: '.html',
-            layoutsDir: path.resolve('templates'),
-            defaultLayout: template,
-            partialsDir: path.resolve('templates')
-        },
-        viewPath: path.resolve('templates'),
-        extName: '.html'
-    };
-
-    // Create the transporter
-    const transporter = nodemailer.createTransport({
-        service: 'Gmail', // Adjust service as necessary
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
+const fs = require('fs');
+const sendEmail = async (to, name, subject, templateName, context) => {
+    const templatePath = path.join(__dirname, '..', 'templates', `${templateName}.html`);
+    let emailTemplate = fs.readFileSync(templatePath, 'utf-8');
+    for (const key in context) {
+        emailTemplate = emailTemplate.replace(`{{${key}}}`, context[key]);
+    }
+    const request = mailjetClient.post('send', { version: 'v3.1' }).request({
+        Messages: [
+            {
+                From: {
+                    Email: process.env.MAILJET_FROM_EMAIL,
+                    Name: 'Account Billing Software Solutions'
+                },
+                To: [
+                    {
+                        Email: to,
+                        Name: name
+                    }
+                ],
+                Subject: subject,
+                HTMLPart: emailTemplate,
+            }
+        ]
     });
-
-    // Use the plugin after dynamic import
-    transporter.use('compile', nodemailerHbs(optionsData));
-
-    const emailBodyOptions = {
-        from: options.From ? options.From : process.env.EMAIL_USER,
-        to: to.email,
-        subject: options.subject || options.Subject,
-        template: template,
-        context: {
-            name: to.name,
-            options: options,
-        }
-    };
-
-    // Send the email
-    transporter.sendMail(emailBodyOptions, function (error, response) {
-        if (error) {
-            console.log("Error sending email to " + to.email, error);
-        } else {
-            console.log("Mail sent to " + to.email);
-        }
-    });
+    try {
+        const result = await request;
+        console.log('Email sent successfully:', result.body);
+    } catch (error) {
+        console.error('Error sending email:', error);
+    }
 };
 
 module.exports = { sendEmail };
