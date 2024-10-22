@@ -7,7 +7,7 @@ const userSchema = new Schema(
         email: { type: String, required: true, unique: true },
         password: { type: String },
         isEmailVerified: { type: Boolean, default: false, enum: [true, false] },
-        userType: { type: Number, default: 1, enum: [1, 2, 3, 4] }, // 1 -> Admin, 2 -> Accountant, 3 -> Client 4-> Super Admin
+        userType: { type: Number, default: 1, enum: [1, 2, 3, 4] }, // 1 -> Super Admin, 2 -> Admin, 3 -> Accountant 4-> Client
         emailVerifyToken: { type: String, default: '' },
         address: {
             fullAddress: { type: String, required: true },  // Full human-readable address

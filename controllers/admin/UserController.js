@@ -45,7 +45,7 @@ module.exports = {
         let emailExists, user, token, link;
         email = email.trim();
         try {
-            if (![1, 2, 3].includes(userType)) {
+            if (![1, 2, 3, 4].includes(userType)) {
                 return res.status(400).send({ success: false, message: "Invalid user type.", data: null });
             }
             emailExists = await User.findOne({ email });
@@ -57,7 +57,7 @@ module.exports = {
             user = new User(req.body);
             token = AuthHelper.generateToken(user);
             user.emailVerifyToken = token;
-            link = `${process.env.API_URL}/account/verify?${user._id}&${user.email}&${token}`;
+            link = `${process.env.API_URL}/account/verify?id=${user._id}&email=${user.email}&token=${token}`
             await user.save();
             const context = {
                 name: fullName,
@@ -72,19 +72,18 @@ module.exports = {
     },
     verifyEmail: async function (req, res) {  
         try {
-            console.log('code is here');
-            
+            const { id, email, token } = req.query;
             const user = await User.findOne({
                 $and: [
-                    { _id: req.params.id },
-                    { email: req.params.email },
-                    { emailVerifyToken: req.params.token }
+                    { _id: id },
+                    { email: email },
+                    { emailVerifyToken: token }
                 ]
             });
             if (!user) {
                 return res.status(404).send({
                     success: false,
-                    message: res.__('LinkExpiredOrInvalid'),
+                    message: 'Link Expired O rInvalid',
                     data: null
                 });
             }
@@ -93,13 +92,13 @@ module.exports = {
             await user.save();
             return res.status(200).send({
                 success: true,
-                message: res.__('YourAccountVerifiedNotLogin'),
+                message: 'Your Account Verified Not Login',
                 data: null
             });
         } catch (err) {
             return res.status(500).send({
                 success: false,
-                message: res.__('SomethingWentWrong'),
+                message: 'Something Went Wrong',
                 data: err
             });
         }
