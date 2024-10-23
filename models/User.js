@@ -8,6 +8,7 @@ const userSchema = new Schema(
         password: { type: String },
         isEmailVerified: { type: Boolean, default: false, enum: [true, false] },
         userType: { type: Number, default: 1, enum: [1, 2, 3, 4] }, // 1 -> Super Admin, 2 -> Admin, 3 -> Accountant 4-> Client
+        isActive: { type: Boolean, default: true, enum: [true, false] },
         emailVerifyToken: { type: String, default: '' },
         address: {
             fullAddress: { type: String, required: true },  // Full human-readable address

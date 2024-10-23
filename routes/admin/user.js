@@ -7,4 +7,7 @@ module.exports = function(app) {
     app.get('/account/verify', function(req, res) {
         UserController.verifyEmail(req, res);
     });
+    app.post('/admin/api/login', function(req, res){
+        UserController.login(req,res);
+    })
 }

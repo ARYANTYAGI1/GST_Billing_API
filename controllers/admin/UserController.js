@@ -102,5 +102,31 @@ module.exports = {
                 data: err
             });
         }
-    }, 
+    },
+    login: async function(req, res) {
+        try {
+            const { email, password} = req.body;
+            const user = await User.findOne({email: email, userType: { $in: [1, 2, 3] }});
+            if(!user) return res.status(401).send({ success: false, message: 'Invalid Email Or Password', data: null });
+            if(!user.isActive) return res.status(400).send({ success: false, message: 'Account Blocked Please contact to Admin', data: null})
+            if(!user.isEmailVerified) return res.status(400).send({ success: false, message: 'E-mail is not verified yet', data: null})
+            const isPasswordValid = await CommonHelper.comparePassword(password, user.password);
+            if (!isPasswordValid) {
+                return res.status(401).send({ success: false, message: 'Invalid Email Or Password', data: null });
+            }
+            token = AuthHelper.generateToken(user);
+            res.status(200).send({ success: true, message: 'Login Success', data: { user: user._id, token: token }})
+        } catch (error) {
+            res.status(500).send({ success: false, message: 'Something Went Wrong', data: error});
+        }
+    },
+    forgotPassword: async function(req, res) {
+        try {
+            const { email } = req.body;
+            const user = await User.findOne({ emai: email, userType: { $in: [1, 2, 3] }});
+            if(!user) return res.status(404).send({ success: false, message: 'Invalid Email Or Password', data: null });
+        } catch (error) {
+            
+        }
+    }
 };
