@@ -10,4 +10,10 @@ module.exports = function(app) {
     app.post('/admin/api/login', function(req, res){
         UserController.login(req,res);
     })
+    app.post('/admin/api/account/forgot-password', function(req, res){
+        UserController.forgotPassword(req,res);
+    })
+    app.post('/account/reset-password', function(req, res){
+        UserController.resetPassword(req,res);
+    })
 }

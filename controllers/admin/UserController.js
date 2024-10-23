@@ -120,13 +120,42 @@ module.exports = {
             res.status(500).send({ success: false, message: 'Something Went Wrong', data: error});
         }
     },
-    forgotPassword: async function(req, res) {
+    forgotPassword: async (req, res) => {
         try {
-            const { email } = req.body;
-            const user = await User.findOne({ emai: email, userType: { $in: [1, 2, 3] }});
-            if(!user) return res.status(404).send({ success: false, message: 'Invalid Email Or Password', data: null });
-        } catch (error) {
-            
+            req.body.email = req.body.email.trim();
+            const user = await User.findOne({ email: req.body.email });
+            if (!user) {
+                return res.status(404).send({ success: false, message: 'Email not registered with us', data: null });
+            }
+            const token = AuthHelper.generateToken(user);
+            user.resetPasswordToken = token;
+            await user.save();
+            const resetLink = `${process.env.API_URL}/account/reset-password?email=${user.email}&token=${token}`;
+            const context = {
+                name: user.firstName,
+                link: resetLink,
+            };
+            await MailHelper.sendEmail(user.email, user.fullName, 'Password Reset Request', 'forgotPassword', context);
+            return res.status(200).send({ success: true, message: 'Password reset link sent to email', data: null });
+        } catch (err) {
+            console.error('Forgot Password Error:', err);
+            return res.status(500).send({ success: false, message: 'Something went wrong', data: err });
+        }
+    },
+    resetPassword: async (req, res) => {
+        try {
+            const { email, token, newPassword } = req.body;
+            const user = await User.findOne({ email, resetPasswordToken: token });
+            if (!user) {
+                return res.status(400).send({ success: false, message: 'Invalid or expired token', data: null });
+            }
+            const hashedPassword = await CommonHelper.bcryptPassword(newPassword);
+            user.password = hashedPassword;
+            user.resetPasswordToken = '';
+            await user.save();
+            return res.status(200).send({ success: true, message: 'Password reset successful', data: null });
+        } catch (err) {
+            return res.status(500).send({ success: false, message: 'Something went wrong', data: err });
         }
     }
 };
