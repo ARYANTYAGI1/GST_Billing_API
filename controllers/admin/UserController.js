@@ -157,5 +157,29 @@ module.exports = {
         } catch (err) {
             return res.status(500).send({ success: false, message: 'Something went wrong', data: err });
         }
-    }
+    },
+    changePassword: async (req, res) => {
+        try {
+            const { oldPassword, newPassword, confirmPassword } = req.body;
+            const userId = req.user._id;
+            if (newPassword !== confirmPassword) {
+                return res.status(400).send({ success: false, message: 'New password and confirm password do not match.' });
+            }
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(404).send({ success: false, message: 'User not found.' });
+            }
+            const isMatch = await CommonHelper.comparePassword(oldPassword, user.password);
+            if (!isMatch) {
+                return res.status(400).send({ success: false, message: 'Old password is incorrect.' });
+            }
+            const hashedPassword = await CommonHelper.bcryptPassword(newPassword);
+            user.password = hashedPassword;
+            await user.save();
+            return res.status(200).send({ success: true, message: 'Password changed successfully.' });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).send({ success: false, message: 'Something went wrong.', data: error });
+        }
+    }    
 };

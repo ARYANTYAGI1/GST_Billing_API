@@ -15,6 +15,31 @@ const generateToken = (user) => {
     return token;
 };
 
+const verifyToken = (token) => {
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        return decoded;
+    } catch (error) {
+      console.log('Error', error)
+    }
+};
+
+const validateToken = (req, res, next) => {
+    const token = req.headers['authorization'].split(' ')[1];
+    if (!token) {
+        return res.status(401).json({ message: 'Access denied. No token provided.' });
+    }
+    try {
+        const decoded = verifyToken(token);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: 'Invalid token.' });
+    }
+};
+
 module.exports = {
-    generateToken
+    generateToken,
+    validateToken,
+    verifyToken
 }

@@ -1,5 +1,5 @@
 const UserController = require("../../controllers/admin/UserController")
-
+const auth = require('../../helpers/auth').validateToken
 module.exports = function(app) {
     app.post('/admin/api/register', function(req, res){
         UserController.addUser(req, res);
@@ -15,5 +15,8 @@ module.exports = function(app) {
     })
     app.post('/account/reset-password', function(req, res){
         UserController.resetPassword(req,res);
+    })
+    app.post('/admin/api/change-password', auth, function(req, res){
+        UserController.changePassword(req, res);
     })
 }
