@@ -16,7 +16,7 @@ const sendEmail = async (to, name, subject, templateName, context) => {
             {
                 From: {
                     Email: process.env.MAILJET_FROM_EMAIL,
-                    Name: 'Account Billing Software Solutions'
+                    Name: 'LedgerHub Software Solutions'
                 },
                 To: [
                     {
